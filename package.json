@@ -1,0 +1,7 @@
+{
+  "name": "ciphering-cli",
+  "version": "1",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module"
+}
