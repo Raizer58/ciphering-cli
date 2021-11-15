@@ -1,7 +1,7 @@
 const { pipeline } = require('stream');
 const { DataReader } = require('./streams/DataReader');
 const { DataWriter } = require('./streams/DataWriter');
-const { CesarTransform } = require('./streams/CesarTransform');
+const { ShiftCipherTransform } = require('./streams/ShiftCipherTransform');
 const { stdin } = require('process');
 
 const pipeCallback = (v) => {
@@ -11,7 +11,7 @@ const pipeCallback = (v) => {
 
 const dataReader = (path) => new DataReader(path);
 const dataWriter = (path) => new DataWriter(path);
-const cesarDataTransform = (flag) => new CesarTransform(flag);
+const cesarDataTransform = (cipher, flag) => new ShiftCipherTransform(cipher, flag);
 
 module.exports.ciphering = async (arg) => {
   const inputPathKeyPosition = arg.findIndex((el) => el === '-i' || el === '--input');
@@ -23,10 +23,11 @@ module.exports.ciphering = async (arg) => {
     .replace('"', '')
     .split('-')
     .map((el) => {
-      if (el.includes('C')) {
+      if (el.includes('C') || el.includes('R')) {
         const flag = el.slice(1);
-        
-        return cesarDataTransform(flag);
+        const cipher = el.slice(0, 1);
+
+        return cesarDataTransform(cipher, flag);
       }
     });
 
