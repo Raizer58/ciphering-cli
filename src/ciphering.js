@@ -1,88 +1,39 @@
-const { Readable, Writable, Transform, pipeline } = require('stream');
-const fs = require('fs');
-
-class DataReader extends Readable {
-  constructor(filename) {
-    super();
-    this.filename = filename;
-    this.fd = null;
-  }
-
-  _construct(callback) {
-    console.log('fs.open', this.filename)
-    fs.open(this.filename, 'a+', (err, fd) => {
-      if (err) {
-        callback(err);
-      } else {
-        this.fd = fd;
-        callback();
-      }
-    });
-  }
-
-  _read(n) {
-    console.log(n)
-    const buf = Buffer.alloc(n);
-    console.log('this.fd', this.fd)
-    if(this.fd) {
-      fs.read(this.fd, buf, 0, n, null, (err, bytesRead, data) => {
-        console.log('ReadCallback', data)
-        if (err) {
-          this.destroy(err);
-        } else {
-          this.push(
-            bytesRead > 0 ? buf.slice(0, bytesRead) : null
-          );
-          fs.close(this.fd, () => console.log('Close file'))
-        }
-      });
-    }
-  }
-
-  _destroy(err, callback) {
-    if (this.fd) {
-      fs.close(this.fd, (er) => callback(er || err));
-    } else {
-      callback(err);
-    }
-  }
-}
-
-class DataWriter extends Writable {
-  _write(chunk, encoding, callback) {
-    console.log(chunk.toString());
-  }
-}
-
-class DataTransform extends Transform {
-  _transform(chunk, encoding, callback) {
-    try {
-      console.log('DataTransform', chunk.toString('utf8'));
-      const resultString = `*${chunk.toString('utf8')}*`;
-
-      callback(null, resultString);
-    } catch (err) {
-      callback(err);
-    }
-  }
-}
+const { pipeline } = require('stream');
+const { DataReader } = require('./streams/DataReader');
+const { DataWriter } = require('./streams/DataWriter');
+const { CesarTransform } = require('./streams/CesarTransform');
+const { stdin } = require('process');
 
 const pipeCallback = (v) => {
-  console.log('completed Pipe', v)
+  if (v ) console.log('ERROR:', v);
+  else console.log('Success ciphering')
 }
 
-const counterReader = new DataReader('./input.txt');
-const counterWriter = new DataWriter();
-const counterTransform = new DataTransform();
-
-counterReader.on('data', (chunk) => console.log(chunk))
+const dataReader = (path) => new DataReader(path);
+const dataWriter = (path) => new DataWriter(path);
+const cesarDataTransform = (flag) => new CesarTransform(flag);
 
 module.exports.ciphering = async (arg) => {
-  console.log('start ciphering', arg);
+  const inputPathKeyPosition = arg.findIndex((el) => el === '-i' || el === '--input');
+  const inputPath = inputPathKeyPosition !== -1 ? arg[inputPathKeyPosition + 1] : undefined;
+  const outputPathKeyPosition = arg.findIndex((el) => el === '-o' || el === '--output');
+  const outputPath = inputPathKeyPosition !== -1 ? arg[outputPathKeyPosition + 1] : undefined;
+  const cipherKeyPosition = arg.findIndex((el) => el === '-c' || el === '--config');
+  const cipherData = (inputPathKeyPosition !== -1 ? arg[cipherKeyPosition + 1] : '')
+    .replace('"', '')
+    .split('-')
+    .map((el) => {
+      if (el.includes('C')) {
+        const flag = el.slice(1);
+        
+        return cesarDataTransform(flag);
+      }
+    });
+
   await pipeline(
-    counterReader,
-    counterTransform,
-    counterWriter,
+    dataReader(inputPath),
+    ...cipherData,
+    dataWriter(outputPath),
     pipeCallback,
   );
 }
