@@ -18,8 +18,10 @@ module.exports.ciphering = async (arg) => {
   const inputPath = inputPathKeyPosition !== -1 ? arg[inputPathKeyPosition + 1] : undefined;
   const outputPathKeyPosition = arg.findIndex((el) => el === '-o' || el === '--output');
   const outputPath = inputPathKeyPosition !== -1 ? arg[outputPathKeyPosition + 1] : undefined;
+  const read =  inputPath ? dataReader(inputPath) : process.stdin;
+  const write = outputPath ? dataWriter(outputPath) : process.stdout;
   const cipherKeyPosition = arg.findIndex((el) => el === '-c' || el === '--config');
-  const cipherData = (inputPathKeyPosition !== -1 ? arg[cipherKeyPosition + 1] : '')
+  const cipherData = (cipherKeyPosition !== -1 ? arg[cipherKeyPosition + 1] : '')
     .replace('"', '')
     .split('-')
     .map((el) => {
@@ -32,9 +34,9 @@ module.exports.ciphering = async (arg) => {
     });
 
   await pipeline(
-    dataReader(inputPath),
+    read,
     ...cipherData,
-    dataWriter(outputPath),
+    write,
     pipeCallback,
   );
 }
