@@ -9,7 +9,7 @@ module.exports.DataWriter = class DataWriter extends Writable {
   }
 
   _construct(callback) {
-    fs.open(this.filename, 'w',(err, fd) => {
+    fs.open(this.filename, 'a', (err, fd) => {
       if (err) {
         callback(err);
       } else {

@@ -2,7 +2,7 @@ const { pipeline } = require('stream');
 const { DataReader } = require('./streams/DataReader');
 const { DataWriter } = require('./streams/DataWriter');
 const { ShiftCipherTransform } = require('./streams/ShiftCipherTransform');
-const { stdin } = require('process');
+const { AtbashCipherTransform } = require('./streams/AtbashCipherTransform');
 
 const pipeCallback = (v) => {
   if (v ) console.log('ERROR:', v);
@@ -18,8 +18,8 @@ module.exports.ciphering = async (arg) => {
   const inputPath = inputPathKeyPosition !== -1 ? arg[inputPathKeyPosition + 1] : undefined;
   const outputPathKeyPosition = arg.findIndex((el) => el === '-o' || el === '--output');
   const outputPath = inputPathKeyPosition !== -1 ? arg[outputPathKeyPosition + 1] : undefined;
-  const read =  inputPath ? dataReader(inputPath) : process.stdin;
-  const write = outputPath ? dataWriter(outputPath) : process.stdout;
+  const readStream =  inputPath ? dataReader(inputPath) : process.stdin;
+  const writeStream = outputPath ? dataWriter(outputPath) : process.stdout;
   const cipherKeyPosition = arg.findIndex((el) => el === '-c' || el === '--config');
   const cipherData = (cipherKeyPosition !== -1 ? arg[cipherKeyPosition + 1] : '')
     .replace('"', '')
@@ -31,12 +31,13 @@ module.exports.ciphering = async (arg) => {
 
         return cesarDataTransform(cipher, flag);
       }
+      if (el.includes('A')) return new AtbashCipherTransform();
     });
 
   await pipeline(
-    read,
+    readStream,
     ...cipherData,
-    write,
+    writeStream,
     pipeCallback,
   );
 }

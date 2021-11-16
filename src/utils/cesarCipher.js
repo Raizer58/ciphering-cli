@@ -19,14 +19,15 @@ module.exports.cesarCipher = (data, cipher, flag) => data
 
       if (Number(flag) === 1) {
         calcPosition = symbolPosition + SHIFT_CIPHER[cipher];
+
         // -2 с учетом того, что сдвиг происходит на 2 символа(из-за нижнего и верхнего регистра)
-        const positionLastSymbol = ALPHABET.length - 2; 
+        const positionLastSymbol = ALPHABET.length - SHIFT_CIPHER[cipher]; 
         if (symbolPosition >= positionLastSymbol) calcPosition = calcPosition - countSymbols;
       } else {
         calcPosition = symbolPosition - SHIFT_CIPHER[cipher];
 
         // 1 с учетом того, что сдвиг происходит на 2 символа(из-за нижнего и верхнего регистра)
-        const positionFirstSymbol = 1;
+        const positionFirstSymbol = SHIFT_CIPHER[cipher] - 1;
 
         if (symbolPosition <= positionFirstSymbol) calcPosition = countSymbols - Math.abs(calcPosition);
       }
